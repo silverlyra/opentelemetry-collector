@@ -22,9 +22,8 @@ TOOLS_MOD_DIR := ./internal/tools
 GOOS=$(shell go env GOOS)
 GOARCH=$(shell go env GOARCH)
 
-REGISTRY?=
+# Container image repository
 REPOSITORY?=otel/opentelemetry-collector
-TAG?=
 
 BUILD_INFO_IMPORT_PATH=go.opentelemetry.io/collector/internal/version
 VERSION=$(shell git describe --always --match "v[0-9]*" HEAD)
@@ -160,7 +159,7 @@ run:
 docker-component: check-component
 	$(MAKE) binaries-$(COMPONENT)-docker
 	cp ./bin/$(COMPONENT)_linux_amd64 ./bin/$(COMPONENT)_linux_arm64 ./cmd/$(COMPONENT)
-	docker buildx build --push --platform linux/amd64,linux/arm64 --tag $(REGISTRY)$(REPOSITORY):$(TAG) ./cmd/$(COMPONENT)/
+	docker buildx build --push --platform linux/amd64,linux/arm64 --tag $(REPOSITORY):$(VERSION) ./cmd/$(COMPONENT)/
 	rm ./cmd/$(COMPONENT)/$(COMPONENT)_linux_*
 
 .PHONY: for-all
