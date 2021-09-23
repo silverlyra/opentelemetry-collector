@@ -22,6 +22,10 @@ TOOLS_MOD_DIR := ./internal/tools
 GOOS=$(shell go env GOOS)
 GOARCH=$(shell go env GOARCH)
 
+REGISTRY?=
+REPOSITORY?=otel/opentelemetry-collector
+TAG?=
+
 BUILD_INFO_IMPORT_PATH=go.opentelemetry.io/collector/internal/version
 VERSION=$(shell git describe --always --match "v[0-9]*" HEAD)
 BUILD_INFO=-ldflags "-X $(BUILD_INFO_IMPORT_PATH).Version=$(VERSION)"
@@ -159,10 +163,10 @@ run:
 
 .PHONY: docker-component # Not intended to be used directly
 docker-component: check-component
-	GOOS=linux $(MAKE) $(COMPONENT)
-	cp ./bin/$(COMPONENT)_linux_amd64 ./cmd/$(COMPONENT)/$(COMPONENT)
-	docker build -t $(COMPONENT) ./cmd/$(COMPONENT)/
-	rm ./cmd/$(COMPONENT)/$(COMPONENT)
+	$(MAKE) binaries-$(COMPONENT)-docker
+	cp ./bin/$(COMPONENT)_linux_amd64 ./bin/$(COMPONENT)_linux_arm64 ./cmd/$(COMPONENT)
+	docker buildx build --push --platform linux/amd64,linux/arm64 --tag $(REGISTRY)$(REPOSITORY):$(TAG) ./cmd/$(COMPONENT)/
+	rm ./cmd/$(COMPONENT)/$(COMPONENT)_linux_*
 
 .PHONY: for-all
 for-all:
@@ -220,6 +224,12 @@ binaries-all-sys: binaries-darwin_amd64 binaries-darwin_arm64 binaries-linux_amd
 
 .PHONY: binaries-all-sys-unstable
 binaries-all-sys-unstable: binaries-darwin_amd64-unstable binaries-darwin_arm64-unstable binaries-linux_amd64-unstable binaries-linux_arm64-unstable binaries-windows_amd64-unstable
+
+.PHONY: binaries-otelcol-docker
+binaries-otelcol-docker: binaries-linux_amd64 binaries-linux_arm64 
+
+.PHONY: binaries-otelcol-docker-unstable
+binaries-otelcol-docker-unstable: binaries-linux_amd64-unstable binaries-linux_arm64-unstable
 
 .PHONY: binaries-darwin_amd64
 binaries-darwin_amd64:
